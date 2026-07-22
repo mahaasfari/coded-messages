@@ -2,7 +2,7 @@
   "name": "رسائل مشفرة",
   "short_name": "رسائل مشفرة",
   "description": "فك تشفير الرسائل باستخدام الكروت",
-  "start_url": "/",
+  "start_url": "/coded-messages/",
   "display": "standalone",
   "background_color": "#fcf4f0",
   "theme_color": "#e8a0b0",
