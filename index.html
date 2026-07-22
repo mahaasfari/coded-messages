@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>رسائل مشفرة</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        /* ===== نفس التصميم الرومانسي الفاتح ===== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #fcf4f0;
+            --bg-soft: #fff9f7;
+            --card-bg: #ffffff;
+            --rose: #e8a0b0;
+            --rose-deep: #c97a8a;
+            --rose-soft: #fce4e0;
+            --text-main: #4a3a3a;
+            --text-soft: #7a6a6a;
+            --border-soft: #f0d6d0;
+            --input-bg: #fffcf9;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Cairo', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .vignette-light {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(255, 245, 240, 0.2) 30%, rgba(252, 244, 240, 0.7) 100%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(90px);
+            opacity: 0.20;
+            z-index: 0;
+            pointer-events: none;
+            animation: orbFloat 16s ease-in-out infinite alternate;
+        }
+
+        @keyframes orbFloat {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                transform: translate(30px, -25px) scale(1.1);
+            }
+        }
+
+        .stage {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 20px;
+            transition: opacity 0.45s ease, transform 0.45s ease;
+        }
+
+        .stage.hidden {
+            opacity: 0;
+            transform: scale(0.96) translateY(18px);
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+        }
+
+        .stage.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+
+        .lock-icon {
+            font-size: 68px;
+            color: var(--rose);
+            animation: lockPulse 3.6s ease-in-out infinite;
+            transition: all 0.5s ease;
+        }
+
+        @keyframes lockPulse {
+            0%,
+            100% {
+                filter: drop-shadow(0 0 12px rgba(200, 120, 140, 0.25));
+                transform: scale(1);
+            }
+            50% {
+                filter: drop-shadow(0 0 32px rgba(200, 120, 140, 0.45));
+                transform: scale(1.05);
+            }
+        }
+
+        .lock-icon.unlocked {
+            animation: none;
+            color: #8bc9b0;
+            filter: drop-shadow(0 0 28px rgba(139, 201, 176, 0.5));
+        }
+
+        .code-input {
+            background: var(--input-bg);
+            border: 2px solid var(--border-soft);
+            border-radius: 18px;
+            padding: 16px 26px;
+            color: var(--text-main);
+            font-family: 'Cairo', sans-serif;
+            font-size: 18px;
+            outline: none;
+            transition: all 0.3s ease;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 2px 12px rgba(200, 120, 140, 0.04);
+        }
+
+        .code-input:focus {
+            border-color: var(--rose);
+            box-shadow: 0 0 0 6px rgba(200, 120, 140, 0.12);
+        }
+
+        .code-input::placeholder {
+            color: var(--text-soft);
+            opacity: 0.6;
+        }
+
+        .btn-rose {
+            background: linear-gradient(145deg, #f5c0c8, #e8a0b0);
+            color: #3d2c2c;
+            border: none;
+            border-radius: 40px;
+            padding: 14px 38px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(200, 120, 140, 0.25);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-rose:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(200, 120, 140, 0.35);
+            background: linear-gradient(145deg, #fad0d6, #e8a0b0);
+        }
+
+        .btn-rose:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-outline-rose {
+            background: transparent;
+            color: var(--rose-deep);
+            border: 2px solid var(--border-soft);
+            border-radius: 40px;
+            padding: 12px 30px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-outline-rose:hover {
+            border-color: var(--rose);
+            color: var(--rose-deep);
+            background: rgba(232, 160, 176, 0.06);
+        }
+
+        /* أزرار الأرقام */
+        .num-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 2px solid var(--border-soft);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-size: 26px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(200, 120, 140, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .num-btn:hover {
+            border-color: var(--rose);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(200, 120, 140, 0.18);
+            background: #fff9f7;
+        }
+
+        .num-btn:active {
+            transform: scale(0.94);
+        }
+
+        .num-btn.clear-btn {
+            background: #f8e0dc;
+            border-color: #f0c8c0;
+            color: #8a4a4a;
+        }
+
+        .num-btn.clear-btn:hover {
+            background: #f5d0ca;
+            border-color: #e8b0a8;
+        }
+
+        .num-btn.confirm-btn {
+            background: var(--rose);
+            border-color: var(--rose);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(200, 120, 140, 0.3);
+        }
+
+        .num-btn.confirm-btn:hover {
+            background: #d48a9a;
+            border-color: #d48a9a;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(200, 120, 140, 0.4);
+        }
+
+        /* عرض الكود المُدخل */
+        .code-display {
+            background: var(--input-bg);
+            border: 2px solid var(--border-soft);
+            border-radius: 18px;
+            padding: 14px 20px;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 12px;
+            text-align: center;
+            min-height: 70px;
+            color: var(--text-main);
+            font-family: 'Cairo', sans-serif;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto 24px;
+            direction: ltr;
+            box-shadow: 0 2px 12px rgba(200, 120, 140, 0.04);
+        }
+
+        .ornament-line {
+            width: 100px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--rose), transparent);
+            margin: 16px auto;
+            border-radius: 4px;
+        }
+
+        .shimmer-title {
+            background: linear-gradient(90deg, var(--rose-deep), #d4a373, var(--rose-deep), #c97a8a, var(--rose-deep));
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleShimmer 5s linear infinite;
+        }
+
+        @keyframes titleShimmer {
+            0%,
+            100% {
+                background-position: 0% center;
+            }
+            50% {
+                background-position: 100% center;
+            }
+        }
+
+        .message-letter {
+            background: linear-gradient(165deg, #fffcf9, #fff5f0);
+            color: var(--text-main);
+            border-radius: 32px;
+            padding: 48px 44px;
+            max-width: 620px;
+            width: 100%;
+            font-family: 'Amiri', serif;
+            font-size: 22px;
+            line-height: 2.2;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(180, 100, 120, 0.12);
+            border: 1px solid rgba(232, 160, 176, 0.15);
+        }
+
+        .message-letter::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--rose), #d4a373, var(--rose));
+            border-radius: 32px 32px 0 0;
+        }
+
+        .line-reveal {
+            opacity: 0;
+            animation: fadeInUp 0.5s ease both;
+        }
+
+        @keyframes fadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%) translateY(120px);
+            padding: 14px 34px;
+            border-radius: 40px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            z-index: 200;
+            transition: transform 0.4s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+            backdrop-filter: blur(4px);
+        }
+
+        .toast.error {
+            background: #f8e0dc;
+            color: #8a4a4a;
+            border: 1px solid #f0c8c0;
+        }
+
+        .toast.success {
+            background: #dcf0e8;
+            color: #3a7a6a;
+            border: 1px solid #b8dcd0;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .shake-anim {
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+            20% {
+                transform: translateX(-10px);
+            }
+            40% {
+                transform: translateX(10px);
+            }
+            60% {
+                transform: translateX(-6px);
+            }
+            80% {
+                transform: translateX(6px);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .message-letter {
+                padding: 28px 20px;
+                font-size: 18px;
+                line-height: 2;
+            }
+            .lock-icon {
+                font-size: 54px;
+            }
+            .btn-rose {
+                padding: 12px 24px;
+                font-size: 16px;
+            }
+            .num-btn {
+                width: 52px;
+                height: 52px;
+                font-size: 22px;
+            }
+            .code-display {
+                font-size: 26px;
+                letter-spacing: 8px;
+                padding: 12px 16px;
+                min-height: 60px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- خلفية -->
+    <canvas id="bg-canvas"></canvas>
+    <div class="vignette-light"></div>
+    <div class="bg-orb" style="width:400px;height:400px;background:#f5c8d0;top:-80px;right:-80px;"></div>
+    <div class="bg-orb" style="width:300px;height:300px;background:#f0d6d0;bottom:-60px;left:-60px;animation-delay:-6s;"></div>
+    <div class="bg-orb" style="width:200px;height:200px;background:#dbb8b0;top:50%;left:50%;animation-delay:-3s;"></div>
+
+    <!-- توست -->
+    <div id="toast" class="toast error"></div>
+
+    <!-- المرحلة 1: إدخال كود الرسالة -->
+    <section id="welcome-stage" class="stage active">
+        <div class="text-center max-w-lg w-full">
+            <div class="lock-icon mb-5">
+                <i class="fas fa-lock"></i>
+            </div>
+            <div class="ornament-line"></div>
+            <h1 class="font-display text-5xl md:text-7xl font-bold shimmer-title mb-2">رسائل مشفرة</h1>
+            <div class="ornament-line"></div>
+            <p class="text-lg md:text-xl mb-10 leading-relaxed" style="color: var(--text-soft);">
+                أدخل كود الرسالة الظاهر على ظهر الكرت
+            </p>
+            <div class="mb-6 flex justify-center">
+                <input id="code-input" class="code-input" type="text" placeholder="أدخل كود الرسالة" autofocus aria-label="كود الرسالة" />
+            </div>
+            <button id="code-btn" class="btn-rose" onclick="enterCode()">
+                <i class="fas fa-key"></i>
+                <span>متابعة</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- المرحلة 2: إدخال رمز فك التشفير (أزرار رقمية) -->
+    <section id="unlock-stage" class="stage hidden">
+        <div class="text-center max-w-lg w-full">
+            <div class="lock-icon mb-5">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h2 class="font-display text-3xl md:text-4xl font-bold mb-3" style="color: var(--text-main);">أدخل رمز فك التشفير</h2>
+            <p class="text-base mb-6" style="color: var(--text-soft);">
+                استخدم الكروت المطبوعة لترتيب الكلمات، ثم اضغط على الأرقام بالترتيب الصحيح
+            </p>
+
+            <!-- عرض الرقم المُدخل -->
+            <div id="code-display" class="code-display">٠ ٠ ٠ ٠</div>
+
+            <!-- شبكة الأزرار -->
+            <div class="grid grid-cols-5 gap-3 max-w-xs mx-auto mb-8">
+                <!-- أزرار ٠-٩ -->
+                <button class="num-btn" onclick="pressDigit('0')">٠</button>
+                <button class="num-btn" onclick="pressDigit('1')">١</button>
+                <button class="num-btn" onclick="pressDigit('2')">٢</button>
+                <button class="num-btn" onclick="pressDigit('3')">٣</button>
+                <button class="num-btn" onclick="pressDigit('4')">٤</button>
+                <button class="num-btn" onclick="pressDigit('5')">٥</button>
+                <button class="num-btn" onclick="pressDigit('6')">٦</button>
+                <button class="num-btn" onclick="pressDigit('7')">٧</button>
+                <button class="num-btn" onclick="pressDigit('8')">٨</button>
+                <button class="num-btn" onclick="pressDigit('9')">٩</button>
+                <!-- زر مسح -->
+                <button class="num-btn clear-btn" onclick="clearDigits()">
+                    <i class="fas fa-undo-alt"></i>
+                </button>
+                <!-- زر تأكيد -->
+                <button class="num-btn confirm-btn" onclick="verifyUnlock()">
+                    <i class="fas fa-check"></i>
+                </button>
+                <!-- خانتين فارغتين للحفاظ على التناسق (يمكن تعديل عدد الأعمدة) -->
+                <div></div>
+                <div></div>
+            </div>
+
+            <div class="flex gap-4 justify-center flex-wrap">
+                <button class="btn-outline-rose" onclick="goToWelcome()">
+                    <i class="fas fa-arrow-right"></i>
+                    <span>رجوع</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- المرحلة 3: عرض الرسالة -->
+    <section id="message-stage" class="stage hidden">
+        <div class="text-center max-w-lg w-full">
+            <div class="lock-icon unlocked mb-5">
+                <i class="fas fa-lock-open"></i>
+            </div>
+            <h2 class="font-display text-3xl md:text-4xl font-bold shimmer-title mb-2">الرسالة المفككة</h2>
+            <div class="ornament-line"></div>
+            <div id="message-letter" class="message-letter text-right mb-10"></div>
+            <button class="btn-outline-rose" onclick="goToWelcome()">
+                <i class="fas fa-envelope"></i>
+                <span>رسالة أخرى</span>
+            </button>
+        </div>
+    </section>
+
+    <script>
+        // ============================================================
+        // تحميل البيانات من ملف JSON
+        // ============================================================
+        let gameData = [];
+
+        async function loadData() {
+            try {
+                const response = await fetch('data.json');
+                if (!response.ok) throw new Error('فشل تحميل البيانات');
+                gameData = await response.json();
+            } catch (error) {
+                showToast('تعذر تحميل البيانات — تأكد من وجود ملف data.json', 'error');
+                console.error(error);
+            }
+        }
+
+        // ============================================================
+        // منطق اللعبة
+        // ============================================================
+        let currentMessage = null;
+        let enteredDigits = [];
+
+        // عناصر DOM
+        const welcomeStage = document.getElementById('welcome-stage');
+        const unlockStage = document.getElementById('unlock-stage');
+        const messageStage = document.getElementById('message-stage');
+        const codeInput = document.getElementById('code-input');
+        const codeDisplay = document.getElementById('code-display');
+        const msgLetter = document.getElementById('message-letter');
+        const toastEl = document.getElementById('toast');
+
+        // تحويل الأرقام إلى عربية للعرض
+        function toArabicNumeral(n) {
+            const map = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+            return String(n).replace(/\d/g, d => map[d]);
+        }
+
+        // تحديث عرض الأرقام
+        function updateCodeDisplay() {
+            const displayStr = enteredDigits.length === 0 ? '٠ ٠ ٠ ٠' :
+                enteredDigits.map(d => toArabicNumeral(d)).join(' ');
+            codeDisplay.textContent = displayStr;
+        }
+
+        // الضغط على رقم
+        function pressDigit(digit) {
+            if (enteredDigits.length >= 10) return; // حد أقصى 10 أرقام
+            enteredDigits.push(digit);
+            updateCodeDisplay();
+        }
+
+        // مسح الأرقام
+        function clearDigits() {
+            enteredDigits = [];
+            updateCodeDisplay();
+        }
+
+        // الانتقال بين المراحل
+        function switchStage(from, to) {
+            from.classList.remove('active');
+            from.classList.add('hidden');
+            setTimeout(() => {
+                to.classList.remove('hidden');
+                to.classList.add('active');
+            }, 380);
+        }
+
+        // عرض تنبيه
+        function showToast(msg, type = 'error') {
+            toastEl.textContent = msg;
+            toastEl.className = 'toast ' + type;
+            requestAnimationFrame(() => toastEl.classList.add('show'));
+            setTimeout(() => toastEl.classList.remove('show'), 2800);
+        }
+
+        // المرحلة 1 → 2
+        function enterCode() {
+            const code = codeInput.value.trim();
+            if (!code) { showToast('أدخل كود الرسالة'); return; }
+            const msg = gameData.find(m => m.code.toLowerCase() === code.toLowerCase());
+            if (!msg) {
+                showToast('لم يتم العثور على رسالة بهذا الكود');
+                codeInput.classList.add('shake-anim');
+                setTimeout(() => codeInput.classList.remove('shake-anim'), 400);
+                return;
+            }
+            currentMessage = msg;
+            enteredDigits = [];
+            updateCodeDisplay();
+            switchStage(welcomeStage, unlockStage);
+        }
+
+        // التحقق من رمز فك التشفير
+        function verifyUnlock() {
+            const entered = enteredDigits.join('');
+            if (entered.length === 0) {
+                showToast('اضغط على الأرقام لتكوين الرمز');
+                return;
+            }
+            if (entered !== currentMessage.unlockCode) {
+                showToast('الرمز غير صحيح — تأكد من ترتيب الكروت');
+                // اهتزاز بسيط
+                codeDisplay.classList.add('shake-anim');
+                setTimeout(() => codeDisplay.classList.remove('shake-anim'), 400);
+                return;
+            }
+
+            // صحيح → نعرض الرسالة
+            const lines = currentMessage.message.split('\n');
+            msgLetter.innerHTML = '';
+            lines.forEach((line, i) => {
+                const p = document.createElement('p');
+                p.className = 'line-reveal';
+                p.style.animationDelay = `${0.4 + i * 0.35}s`;
+                p.textContent = line;
+                if (i === 0) {
+                    p.style.fontWeight = '700';
+                    p.style.fontSize = '26px';
+                    p.style.color = '#7a4a4a';
+                }
+                if (i === lines.length - 1) {
+                    p.style.fontWeight = '700';
+                    p.style.marginTop = '20px';
+                    p.style.color = '#a06050';
+                }
+                msgLetter.appendChild(p);
+            });
+
+            switchStage(unlockStage, messageStage);
+            showToast('تم فك التشفير بنجاح!', 'success');
+            burstParticles();
+        }
+
+        // الرجوع للبداية
+        function goToWelcome() {
+            codeInput.value = '';
+            enteredDigits = [];
+            updateCodeDisplay();
+            currentMessage = null;
+            switchStage(messageStage, welcomeStage);
+            setTimeout(() => codeInput.focus(), 500);
+        }
+
+        // أحداث
+        codeInput.addEventListener('keydown', e => { if (e.key === 'Enter') enterCode(); });
+
+        // ===== تحميل البيانات عند بدء التشغيل =====
+        loadData();
+
+        // ===== نظام الجزيئات الوردية =====
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let burstQueue = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function initParticles() {
+            particles = [];
+            const count = Math.min(70, Math.floor(window.innerWidth * window.innerHeight / 15000));
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2.8 + 0.5,
+                    vx: (Math.random() - 0.5) * 0.2,
+                    vy: (Math.random() - 0.5) * 0.2,
+                    phase: Math.random() * Math.PI * 2,
+                    baseOpacity: Math.random() * 0.30 + 0.08,
+                });
+            }
+        }
+
+        function burstParticles() {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            for (let i = 0; i < 50; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 3.5 + 1.8;
+                burstQueue.push({
+                    x: cx,
+                    y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: Math.random() * 4 + 1.2,
+                    life: 1,
+                    decay: Math.random() * 0.018 + 0.008,
+                });
+            }
+        }
+
+        function drawFrame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.phase += 0.012;
+                if (p.x < 0) p.x += canvas.width;
+                if (p.x > canvas.width) p.x -= canvas.width;
+                if (p.y < 0) p.y += canvas.height;
+                if (p.y > canvas.height) p.y -= canvas.height;
+                const op = p.baseOpacity * (0.5 + 0.5 * Math.sin(p.phase));
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, Math.max(0.5, p.size), 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(200, 130, 150, ${op.toFixed(3)})`;
+                ctx.fill();
+            });
+
+            burstQueue = burstQueue.filter(b => b.life > 0);
+            burstQueue.forEach(b => {
+                b.x += b.vx;
+                b.y += b.vy;
+                b.vx *= 0.98;
+                b.vy *= 0.98;
+                b.life -= b.decay;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, Math.max(0.5, b.size * b.life), 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(210, 140, 160, ${(b.life * 0.7).toFixed(3)})`;
+                ctx.fill();
+            });
+
+            requestAnimationFrame(drawFrame);
+        }
+
+        resizeCanvas();
+        initParticles();
+        drawFrame();
+        window.addEventListener('resize', () => { resizeCanvas();
+            initParticles(); });
+
+        setTimeout(() => codeInput.focus(), 120);
+    </script>
+</body>
+</html>
