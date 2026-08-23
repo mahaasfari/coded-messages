@@ -8,16 +8,15 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-    <!-- ربط ملف المانيفست -->
+    <!-- ربط ملف المانيفست والأيقونات -->
     <link rel="manifest" href="manifest.json">
-    <!-- أيقونات -->
     <link rel="apple-touch-icon" sizes="192x192" href="icon.png">
     <link rel="apple-touch-icon" sizes="512x512" href="icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
     <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
 
     <style>
-        /* ===== نفس التصميم الرومانسي الفاتح (مع إضافات للرد) ===== */
+        /* ===== التصميم الرومانسي الفاتح (مع إضافات المرفقات والرد) ===== */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -439,6 +438,39 @@
             }
         }
 
+        /* مرفقات */
+        .attachment-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 22px;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 600;
+            background: rgba(232, 160, 176, 0.10);
+            border: 1px solid rgba(232, 160, 176, 0.20);
+            color: var(--rose-deep);
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+        .attachment-link:hover {
+            background: rgba(232, 160, 176, 0.20);
+            border-color: var(--rose);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(200, 120, 140, 0.15);
+        }
+        .attachment-audio {
+            width: 100%;
+            max-width: 280px;
+            margin: 4px 0;
+        }
+        .attachment-audio audio {
+            width: 100%;
+            border-radius: 40px;
+            background: #f5ede8;
+            height: 40px;
+        }
+
         .toast {
             position: fixed;
             bottom: 32px;
@@ -524,6 +556,10 @@
             }
             .reply-area {
                 padding: 16px;
+            }
+            .attachment-link {
+                font-size: 13px;
+                padding: 8px 16px;
             }
         }
 
@@ -620,7 +656,7 @@
         </div>
     </section>
 
-    <!-- المرحلة 3: عرض الرسالة + الرد -->
+    <!-- المرحلة 3: عرض الرسالة + الرد + المرفقات -->
     <section id="message-stage" class="stage hidden">
         <div class="text-center max-w-lg w-full">
             <div class="lock-icon unlocked mb-5">
@@ -630,8 +666,17 @@
             <div class="ornament-line"></div>
             <div id="message-letter" class="message-letter text-right mb-6"></div>
 
+            <!-- ====== قسم المرفقات (يظهر أسفل الرسالة) ====== -->
+            <div id="attachments-container" class="mt-6 text-right" style="display: none;">
+                <div class="ornament-line"></div>
+                <h3 class="font-display text-xl font-bold mb-3" style="color: var(--rose-deep);">
+                    <i class="fas fa-paperclip ml-2"></i>المرفقات
+                </h3>
+                <div id="attachments-list" class="flex flex-wrap gap-3 justify-center"></div>
+            </div>
+
             <!-- زر الرد الجديد (أكبر) -->
-            <button class="btn-reply" onclick="toggleReply()">
+            <button class="btn-reply mt-6" onclick="toggleReply()">
                 <i class="fas fa-reply"></i>
                 <span>رد على الرسالة</span>
             </button>
@@ -644,7 +689,7 @@
                 </button>
             </div>
 
-            <!-- زر العودة للبداية (اختياري، لكن يمكن إضافته للرجوع) -->
+            <!-- زر العودة للبداية -->
             <div class="mt-6">
                 <button class="btn-outline-rose" onclick="goToWelcome()">
                     <i class="fas fa-home"></i>
@@ -687,6 +732,8 @@
         const toastEl = document.getElementById('toast');
         const replyArea = document.getElementById('reply-area');
         const replyText = document.getElementById('reply-text');
+        const attachmentsContainer = document.getElementById('attachments-container');
+        const attachmentsList = document.getElementById('attachments-list');
 
         // تحويل الأرقام إلى عربية للعرض
         function toArabicNumeral(n) {
@@ -746,9 +793,10 @@
             currentMessage = msg;
             enteredDigits = [];
             updateCodeDisplay();
-            // إخفاء منطقة الرد عند الانتقال
             replyArea.classList.remove('show');
             replyText.value = '';
+            attachmentsContainer.style.display = 'none';
+            attachmentsList.innerHTML = '';
             switchStage(welcomeStage, unlockStage);
         }
 
@@ -787,6 +835,42 @@
                 msgLetter.appendChild(p);
             });
 
+            // ===== عرض المرفقات إن وجدت =====
+            attachmentsList.innerHTML = '';
+            if (currentMessage.attachments && currentMessage.attachments.length > 0) {
+                attachmentsContainer.style.display = 'block';
+                currentMessage.attachments.forEach(att => {
+                    // إذا كان الملف صوتياً، نعرض مشغل audio
+                    if (att.type === 'audio') {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'attachment-audio';
+                        const audio = document.createElement('audio');
+                        audio.controls = true;
+                        audio.src = att.url;
+                        audio.className = 'w-full rounded-full';
+                        audio.style.background = '#f5ede8';
+                        wrapper.appendChild(audio);
+                        attachmentsList.appendChild(wrapper);
+                    } else {
+                        // PDF أو أي ملف آخر: رابط تحميل
+                        const link = document.createElement('a');
+                        link.href = att.url;
+                        link.target = '_blank';
+                        link.className = 'attachment-link';
+                        link.download = att.name || 'ملف';
+                        const icon = att.type === 'pdf' ? 'fa-file-pdf' : 'fa-file';
+                        link.innerHTML = `
+                            <i class="fas ${icon}"></i>
+                            <span>${att.name || 'ملف مرفق'}</span>
+                            <i class="fas fa-arrow-left text-xs opacity-60"></i>
+                        `;
+                        attachmentsList.appendChild(link);
+                    }
+                });
+            } else {
+                attachmentsContainer.style.display = 'none';
+            }
+
             // إخفاء منطقة الرد عند فتح رسالة جديدة
             replyArea.classList.remove('show');
             replyText.value = '';
@@ -804,6 +888,8 @@
             currentMessage = null;
             replyArea.classList.remove('show');
             replyText.value = '';
+            attachmentsContainer.style.display = 'none';
+            attachmentsList.innerHTML = '';
             switchStage(messageStage, welcomeStage);
             setTimeout(() => codeInput.focus(), 500);
         }
@@ -825,15 +911,12 @@
                 return;
             }
 
-            // هنا يمكنك إرسال الرد (مثلاً إلى بريد إلكتروني أو تخزينه)
-            // سنقوم بحفظه في localStorage مع وقت الإرسال
             const replyData = {
                 message: currentMessage.code,
                 reply: reply,
                 date: new Date().toLocaleString('ar-EG')
             };
 
-            // حفظ في localStorage (كمصفوفة من الردود)
             let replies = JSON.parse(localStorage.getItem('replies') || '[]');
             replies.push(replyData);
             localStorage.setItem('replies', JSON.stringify(replies));
@@ -841,8 +924,6 @@
             showToast('تم إرسال ردك بنجاح! 🌸', 'success');
             replyText.value = '';
             replyArea.classList.remove('show');
-
-            // يمكنك أيضاً عرض الرد في وحدة تحكم المتصفح للاختبار
             console.log('تم حفظ الرد:', replyData);
         }
 
