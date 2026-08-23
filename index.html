@@ -9,17 +9,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <!-- ربط ملف المانيفست -->
-<link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json">
+    <!-- أيقونات -->
+    <link rel="apple-touch-icon" sizes="192x192" href="icon.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
 
-<!-- أيقونة لأجهزة أبل (iOS) -->
-<link rel="apple-touch-icon" sizes="192x192" href="icon.png">
-<link rel="apple-touch-icon" sizes="512x512" href="icon.png">
-
-<!-- أيقونة عامة للمتصفح -->
-<link rel="icon" type="image/png" sizes="192x192" href="icon.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon.png">
     <style>
-        /* ===== نفس التصميم الرومانسي الفاتح ===== */
+        /* ===== نفس التصميم الرومانسي الفاتح (مع إضافات للرد) ===== */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -37,6 +35,8 @@
             --text-soft: #7a6a6a;
             --border-soft: #f0d6d0;
             --input-bg: #fffcf9;
+            --reply-blue: #8fb5d0;
+            --reply-blue-deep: #6a8fa8;
         }
 
         body {
@@ -209,6 +209,90 @@
             border-color: var(--rose);
             color: var(--rose-deep);
             background: rgba(232, 160, 176, 0.06);
+        }
+
+        /* زر الرد الجديد (أكبر) */
+        .btn-reply {
+            background: linear-gradient(145deg, #8fb5d0, #6a8fa8);
+            color: #fff;
+            border: none;
+            border-radius: 40px;
+            padding: 18px 48px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(106, 143, 168, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .btn-reply:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 32px rgba(106, 143, 168, 0.45);
+            background: linear-gradient(145deg, #9cc0d8, #6a8fa8);
+        }
+
+        /* منطقة الرد */
+        .reply-area {
+            margin-top: 24px;
+            width: 100%;
+            max-width: 560px;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(6px);
+            border-radius: 28px;
+            padding: 24px;
+            border: 2px solid rgba(200, 120, 140, 0.15);
+            transition: all 0.4s ease;
+            display: none;
+        }
+
+        .reply-area.show {
+            display: block;
+            animation: fadeInUp 0.4s ease both;
+        }
+
+        .reply-area textarea {
+            width: 100%;
+            min-height: 120px;
+            border: 2px solid var(--border-soft);
+            border-radius: 18px;
+            padding: 16px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 18px;
+            background: var(--input-bg);
+            color: var(--text-main);
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .reply-area textarea:focus {
+            border-color: var(--rose);
+            box-shadow: 0 0 0 6px rgba(200, 120, 140, 0.1);
+        }
+
+        .reply-area .btn-send-reply {
+            margin-top: 16px;
+            background: var(--rose);
+            color: #fff;
+            border: none;
+            border-radius: 40px;
+            padding: 12px 32px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(200, 120, 140, 0.25);
+        }
+
+        .reply-area .btn-send-reply:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(200, 120, 140, 0.35);
+            background: #d48a9a;
         }
 
         /* أزرار الأرقام */
@@ -434,6 +518,13 @@
                 padding: 12px 16px;
                 min-height: 60px;
             }
+            .btn-reply {
+                padding: 14px 32px;
+                font-size: 18px;
+            }
+            .reply-area {
+                padding: 16px;
+            }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -515,7 +606,7 @@
                 <button class="num-btn confirm-btn" onclick="verifyUnlock()">
                     <i class="fas fa-check"></i>
                 </button>
-                <!-- خانتين فارغتين للحفاظ على التناسق (يمكن تعديل عدد الأعمدة) -->
+                <!-- خانتين فارغتين للحفاظ على التناسق -->
                 <div></div>
                 <div></div>
             </div>
@@ -529,7 +620,7 @@
         </div>
     </section>
 
-    <!-- المرحلة 3: عرض الرسالة -->
+    <!-- المرحلة 3: عرض الرسالة + الرد -->
     <section id="message-stage" class="stage hidden">
         <div class="text-center max-w-lg w-full">
             <div class="lock-icon unlocked mb-5">
@@ -537,11 +628,29 @@
             </div>
             <h2 class="font-display text-3xl md:text-4xl font-bold shimmer-title mb-2">الرسالة المفككة</h2>
             <div class="ornament-line"></div>
-            <div id="message-letter" class="message-letter text-right mb-10"></div>
-            <button class="btn-outline-rose" onclick="goToWelcome()">
-                <i class="fas fa-envelope"></i>
-                <span>رسالة أخرى</span>
+            <div id="message-letter" class="message-letter text-right mb-6"></div>
+
+            <!-- زر الرد الجديد (أكبر) -->
+            <button class="btn-reply" onclick="toggleReply()">
+                <i class="fas fa-reply"></i>
+                <span>رد على الرسالة</span>
             </button>
+
+            <!-- منطقة الرد (مخفية) -->
+            <div id="reply-area" class="reply-area">
+                <textarea id="reply-text" placeholder="اكتب ردك هنا..."></textarea>
+                <button class="btn-send-reply" onclick="sendReply()">
+                    <i class="fas fa-paper-plane"></i> إرسال الرد
+                </button>
+            </div>
+
+            <!-- زر العودة للبداية (اختياري، لكن يمكن إضافته للرجوع) -->
+            <div class="mt-6">
+                <button class="btn-outline-rose" onclick="goToWelcome()">
+                    <i class="fas fa-home"></i>
+                    <span>الرئيسية</span>
+                </button>
+            </div>
         </div>
     </section>
 
@@ -576,6 +685,8 @@
         const codeDisplay = document.getElementById('code-display');
         const msgLetter = document.getElementById('message-letter');
         const toastEl = document.getElementById('toast');
+        const replyArea = document.getElementById('reply-area');
+        const replyText = document.getElementById('reply-text');
 
         // تحويل الأرقام إلى عربية للعرض
         function toArabicNumeral(n) {
@@ -592,7 +703,7 @@
 
         // الضغط على رقم
         function pressDigit(digit) {
-            if (enteredDigits.length >= 10) return; // حد أقصى 10 أرقام
+            if (enteredDigits.length >= 10) return;
             enteredDigits.push(digit);
             updateCodeDisplay();
         }
@@ -635,6 +746,9 @@
             currentMessage = msg;
             enteredDigits = [];
             updateCodeDisplay();
+            // إخفاء منطقة الرد عند الانتقال
+            replyArea.classList.remove('show');
+            replyText.value = '';
             switchStage(welcomeStage, unlockStage);
         }
 
@@ -647,7 +761,6 @@
             }
             if (entered !== currentMessage.unlockCode) {
                 showToast('الرمز غير صحيح — تأكد من ترتيب الكروت');
-                // اهتزاز بسيط
                 codeDisplay.classList.add('shake-anim');
                 setTimeout(() => codeDisplay.classList.remove('shake-anim'), 400);
                 return;
@@ -674,6 +787,10 @@
                 msgLetter.appendChild(p);
             });
 
+            // إخفاء منطقة الرد عند فتح رسالة جديدة
+            replyArea.classList.remove('show');
+            replyText.value = '';
+
             switchStage(unlockStage, messageStage);
             showToast('تم فك التشفير بنجاح!', 'success');
             burstParticles();
@@ -685,8 +802,48 @@
             enteredDigits = [];
             updateCodeDisplay();
             currentMessage = null;
+            replyArea.classList.remove('show');
+            replyText.value = '';
             switchStage(messageStage, welcomeStage);
             setTimeout(() => codeInput.focus(), 500);
+        }
+
+        // ===== وظائف الرد =====
+        function toggleReply() {
+            replyArea.classList.toggle('show');
+            if (replyArea.classList.contains('show')) {
+                replyText.focus();
+            }
+        }
+
+        function sendReply() {
+            const reply = replyText.value.trim();
+            if (!reply) {
+                showToast('اكتب ردك أولاً');
+                replyText.classList.add('shake-anim');
+                setTimeout(() => replyText.classList.remove('shake-anim'), 400);
+                return;
+            }
+
+            // هنا يمكنك إرسال الرد (مثلاً إلى بريد إلكتروني أو تخزينه)
+            // سنقوم بحفظه في localStorage مع وقت الإرسال
+            const replyData = {
+                message: currentMessage.code,
+                reply: reply,
+                date: new Date().toLocaleString('ar-EG')
+            };
+
+            // حفظ في localStorage (كمصفوفة من الردود)
+            let replies = JSON.parse(localStorage.getItem('replies') || '[]');
+            replies.push(replyData);
+            localStorage.setItem('replies', JSON.stringify(replies));
+
+            showToast('تم إرسال ردك بنجاح! 🌸', 'success');
+            replyText.value = '';
+            replyArea.classList.remove('show');
+
+            // يمكنك أيضاً عرض الرد في وحدة تحكم المتصفح للاختبار
+            console.log('تم حفظ الرد:', replyData);
         }
 
         // أحداث
